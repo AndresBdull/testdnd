@@ -1,9 +1,9 @@
-// sortablesection funcional
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableItem from './SortableItem.jsx';
+import CustomComponent from './CustomComponent.jsx';
 
 const SortableSection = ({ id, items = [], isOverlay }) => {
   const {
@@ -34,7 +34,11 @@ const SortableSection = ({ id, items = [], isOverlay }) => {
       <h2>{sectionTitle}</h2>
       <SortableContext items={items} strategy={verticalListSortingStrategy}>
         {items.map((item) => (
-          <SortableItem key={item} id={item} />
+          item.startsWith('Custom') ? (
+            <CustomComponent key={item} id={item} text1="Texto 1" text2="Texto 2" />
+          ) : (
+            <SortableItem key={item} id={item} />
+          )
         ))}
       </SortableContext>
     </div>

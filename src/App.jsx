@@ -1,4 +1,3 @@
-// app funcional
 import React, { useState } from 'react';
 import {
   DndContext,
@@ -15,19 +14,23 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy
+  verticalListSortingStrategy,
+  horizontalListSortingStrategy
 } from '@dnd-kit/sortable';
 import {
   restrictToVerticalAxis,
+  restrictToHorizontalAxis,
   restrictToWindowEdges,
   createSnapModifier
 } from '@dnd-kit/modifiers';
 import SortableSection from './SortableSection.jsx';
 import SortableItem from './SortableItem.jsx';
+import CustomComponent from './CustomComponent.jsx';
+import SortableInnerItem from './SortableInnerItem.jsx';
 
 const initialItems = {
   section1: ['Imagen 1'],
-  section2: ['About', 'Formulario'],
+  section2: ['About', 'Formulario', 'CustomComponent1'],
   section3: ['Imagen 2', 'Texto'],
   section4: ['FAQs'],
 };
@@ -101,7 +104,7 @@ function App() {
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      modifiers={[restrictToVerticalAxis]}
+      modifiers={[restrictToWindowEdges, snapToGridModifier]}
     >
       <SortableContext items={sections} strategy={verticalListSortingStrategy}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', backgroundColor: '#f5f5f5' }}>
@@ -115,7 +118,15 @@ function App() {
           sections.includes(activeId) ? (
             <SortableSection id={activeId} items={items[activeId]} isOverlay />
           ) : (
-            <SortableItem id={activeId} />
+            activeId.includes('CustomComponent1-text') ? (
+              <SortableInnerItem id={activeId} text={activeId.split('-')[2]} />
+            ) : (
+              items.section2.includes(activeId) ? (
+                <CustomComponent id={activeId} text1="Texto 1" text2="Texto 2" />
+              ) : (
+                <SortableItem id={activeId} />
+              )
+            )
           )
         ) : null}
       </DragOverlay>
