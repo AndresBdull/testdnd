@@ -22,8 +22,8 @@ import {
   restrictToWindowEdges,
   createSnapModifier
 } from '@dnd-kit/modifiers';
-import SortableSection from './SortableSection';
-import SortableItem from './SortableItem';
+import SortableSection from './SortableSection.jsx';
+import SortableItem from './SortableItem.jsx';
 
 const initialItems = {
   section1: ['Imagen 1'],

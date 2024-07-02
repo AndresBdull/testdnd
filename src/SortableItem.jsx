@@ -1,4 +1,4 @@
-// sortableitem funcional
+// SortableItem.js
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -20,7 +20,7 @@ function SortableItem({ id }) {
     margin: '8px 0',
     border: '1px solid #ccc',
     borderRadius: '4px',
-    backgroundColor: isDragging ? '#f10f0f' : '#efa5a5',
+    backgroundColor: isDragging ? '#6c676770 ' : '#ebbb84',
     cursor: 'grab',
     boxShadow: isDragging ? '0 4px 8px rgba(0,0,0,0.1)' : 'none',
     touchAction: 'none', // Prevent scrolling on mobile devices

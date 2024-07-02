@@ -3,7 +3,7 @@ import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import SortableItem from './SortableItem';
+import SortableItem from './SortableItem.jsx';
 
 const SortableSection = ({ id, items = [], isOverlay }) => {
   const {
@@ -19,7 +19,7 @@ const SortableSection = ({ id, items = [], isOverlay }) => {
     transform: CSS.Transform.toString(transform),
     transition: isOverlay ? undefined : transition,
     padding: '16px',
-    border: isDragging ? '2px solid #4A90E2' : '1px solid #ccc',
+    border: isDragging ? '5px solid #4A90E2' : '1px solid #ccc',
     borderRadius: '4px',
     backgroundColor: '#fff',
     marginBottom: '16px',
