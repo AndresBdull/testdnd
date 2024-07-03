@@ -1,135 +1,91 @@
-import React, { useState } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragOverlay
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  horizontalListSortingStrategy
-} from '@dnd-kit/sortable';
-import {
-  restrictToVerticalAxis,
-  restrictToHorizontalAxis,
-  restrictToWindowEdges,
-  createSnapModifier
-} from '@dnd-kit/modifiers';
-import SortableSection from './SortableSection.jsx';
-import SortableItem from './SortableItem.jsx';
-import CustomComponent from './CustomComponent.jsx';
-import SortableInnerItem from './SortableInnerItem.jsx';
-
-const initialItems = {
-  section1: ['Imagen 1'],
-  section2: ['About', 'Formulario', 'CustomComponent1'],
-  section3: ['Imagen 2', 'Texto'],
-  section4: ['FAQs'],
-};
-
-const initialSections = ['section1', 'section2', 'section3', 'section4'];
-
-const gridSize = 20; // Tamaño de la cuadrícula en píxeles
-const snapToGridModifier = createSnapModifier(gridSize);
+import React, { useState, useCallback } from "react";
+import { DndContext, DragOverlay } from "@dnd-kit/core";
+import Droppable from "./daniel/dndComponents/Droppable";
+import Draggable from "./daniel/dndComponents/Draggable";
+import { SHA256 } from "crypto-js";
+import { blocksConfig } from "./daniel/json/blocks.jsx";
 
 function App() {
-  const [items, setItems] = useState(initialItems);
-  const [sections, setSections] = useState(initialSections);
+  const containers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const [blocks, setBlocks] = useState([]);
+  const [cloneInfo, setCloneInfo] = useState({ cloning: false, cloneId: null, type: null });
   const [activeId, setActiveId] = useState(null);
 
-  const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 10 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const handleStaticClick = useCallback((type) => () => {
+    const currentTimestamp = new Date().toISOString();
+    const newCloneId = `clone-${SHA256(currentTimestamp).toString()}`;
+    setCloneInfo({ cloning: true, cloneId: newCloneId, type });
+  }, []);
 
-  const handleDragStart = (event) => {
+  const handleDragStart = useCallback((event) => {
     setActiveId(event.active.id);
-  };
+  }, []);
 
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
+  const handleDragEnd = useCallback((event) => {
+    const { over, active } = event;
     setActiveId(null);
 
-    if (!over) return;
-
-    if (sections.includes(active.id) && sections.includes(over.id)) {
-      // Mover secciones
-      setSections((sections) => {
-        const oldIndex = sections.indexOf(active.id);
-        const newIndex = sections.indexOf(over.id);
-        return arrayMove(sections, oldIndex, newIndex);
-      });
-    } else {
-      // Mover items dentro de una sección
-      const activeContainer = Object.keys(items).find((key) => items[key].includes(active.id));
-      const overContainer = Object.keys(items).find((key) => items[key].includes(over.id));
-
-      if (activeContainer && overContainer) {
-        if (activeContainer === overContainer) {
-          setItems((prevItems) => ({
-            ...prevItems,
-            [activeContainer]: arrayMove(prevItems[activeContainer], prevItems[activeContainer].indexOf(active.id), prevItems[activeContainer].indexOf(over.id)),
-          }));
-        } else {
-          setItems((prevItems) => {
-            const activeItems = [...prevItems[activeContainer]];
-            const overItems = [...prevItems[overContainer]];
-
-            activeItems.splice(activeItems.indexOf(active.id), 1);
-            overItems.splice(overItems.indexOf(over.id), 0, active.id);
-
-            return {
-              ...prevItems,
-              [activeContainer]: activeItems,
-              [overContainer]: overItems,
-            };
-          });
-        }
-      }
+    if (cloneInfo.cloning && over) {
+      const blockType = blocksConfig.find(b => b.type === cloneInfo.type);
+      const newBlock = { id: cloneInfo.cloneId, parent: over.id, content: blockType.content, style: blockType.style };
+      setBlocks(prevBlocks => [...prevBlocks, newBlock]);
+      setCloneInfo({ cloning: false, cloneId: null, type: null });
+    } else if (over && active.id !== cloneInfo.cloneId) {
+      const updatedBlocks = blocks.map(block =>
+        block.id === active.id ? { ...block, parent: over.id } : block
+      );
+      setBlocks(updatedBlocks);
     }
-  };
+  }, [cloneInfo, blocks]);
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      modifiers={[restrictToWindowEdges, snapToGridModifier]}
-    >
-      <SortableContext items={sections} strategy={verticalListSortingStrategy}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px', backgroundColor: '#f5f5f5' }}>
-          {sections.map((sectionId) => (
-            <SortableSection key={sectionId} id={sectionId} items={items[sectionId]} />
-          ))}
+    <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {blocksConfig.map((block, index) => (
+        <button key={index} onClick={handleStaticClick(block.type)} style={{ margin: 5 }}>
+          Agregar {block.type}
+        </button>
+      ))}
+
+      {cloneInfo.cloning && (
+        <div style={{ visibility: activeId ? "hidden" : "visible" }}>
+          <Draggable key={cloneInfo.cloneId} id={cloneInfo.cloneId}>
+            {blocksConfig.find(b => b.type === cloneInfo.type).content}
+          </Draggable>
         </div>
-      </SortableContext>
-      <DragOverlay modifiers={[restrictToWindowEdges, snapToGridModifier]}>
-        {activeId ? (
-          sections.includes(activeId) ? (
-            <SortableSection id={activeId} items={items[activeId]} isOverlay />
-          ) : (
-            activeId.includes('CustomComponent1-text') ? (
-              <SortableInnerItem id={activeId} text={activeId.split('-')[2]} />
-            ) : (
-              items.section2.includes(activeId) ? (
-                <CustomComponent id={activeId} text1="Texto 1" text2="Texto 2" />
-              ) : (
-                <SortableItem id={activeId} />
-              )
-            )
-          )
-        ) : null}
+      )}
+
+      {containers.map(id => (
+        <Droppable key={id} id={id}>
+          {blocks.filter(block => block.parent === id).map(block => (
+            <div key={block.id} style={block.id === activeId ? { visibility: "hidden" } : {}}>
+              <Draggable id={block.id} style={block.style}>
+                {block.content}
+              </Draggable>
+            </div>
+          ))}
+
+          Drop here
+        </Droppable>
+      ))}
+
+      <DragOverlay>
+        {activeId && (
+          <div style={{
+            width: '100px',  // Tamaño más pequeño para facilitar el manejo
+            height: '100px', // Tamaño más pequeño para facilitar el manejo
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: 'white',
+            borderRadius: '4px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            fontSize: '0.75rem' // Tamaño de fuente reducido
+          }}>
+            {blocks.find(b => b.id === activeId) ? blocks.find(b => b.id === activeId).content : "Cargando..."}
+          </div>
+        )}
       </DragOverlay>
+
     </DndContext>
   );
 }
