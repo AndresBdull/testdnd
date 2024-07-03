@@ -3,10 +3,9 @@ import { DndContext, DragOverlay } from "@dnd-kit/core";
 import Droppable from "./daniel/dndComponents/Droppable";
 import Draggable from "./daniel/dndComponents/Draggable";
 import { SHA256 } from "crypto-js";
-import { blocksConfig } from "./daniel/json/blocks.jsx";
+import { blocksConfig } from "./daniel/json/blocks";
 
 function App() {
-  const containers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   const [blocks, setBlocks] = useState([]);
   const [cloneInfo, setCloneInfo] = useState({ cloning: false, cloneId: null, type: null });
   const [activeId, setActiveId] = useState(null);
@@ -27,7 +26,7 @@ function App() {
 
     if (cloneInfo.cloning && over) {
       const blockType = blocksConfig.find(b => b.type === cloneInfo.type);
-      const newBlock = { id: cloneInfo.cloneId, parent: over.id, content: blockType.content, style: blockType.style };
+      const newBlock = { id: cloneInfo.cloneId, parent: over.id, content: blockType.content, style: blockType.style, isDroppable: blockType.isDroppable };
       setBlocks(prevBlocks => [...prevBlocks, newBlock]);
       setCloneInfo({ cloning: false, cloneId: null, type: null });
     } else if (over && active.id !== cloneInfo.cloneId) {
@@ -38,6 +37,19 @@ function App() {
     }
   }, [cloneInfo, blocks]);
 
+  const renderBlocks = (parentId) => {
+    return blocks.filter(block => block.parent === parentId).map(block => (
+      <div key={block.id} >
+        <Draggable id={block.id} style={block.style}>
+          {block.content}
+          {block.isDroppable && <Droppable id={block.id}>
+            {renderBlocks(block.id)}
+          </Droppable>}
+        </Draggable>
+      </div>
+    ));
+  };
+
   return (
     <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       {blocksConfig.map((block, index) => (
@@ -47,23 +59,16 @@ function App() {
       ))}
 
       {cloneInfo.cloning && (
-        <div style={{ visibility: activeId ? "hidden" : "visible" }}>
+        <div>
           <Draggable key={cloneInfo.cloneId} id={cloneInfo.cloneId}>
             {blocksConfig.find(b => b.type === cloneInfo.type).content}
           </Draggable>
         </div>
       )}
 
-      {containers.map(id => (
+      {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(id => (
         <Droppable key={id} id={id}>
-          {blocks.filter(block => block.parent === id).map(block => (
-            <div key={block.id} style={block.id === activeId ? { visibility: "hidden" } : {}}>
-              <Draggable id={block.id} style={block.style}>
-                {block.content}
-              </Draggable>
-            </div>
-          ))}
-
+          {renderBlocks(id)}
           Drop here
         </Droppable>
       ))}
@@ -71,21 +76,20 @@ function App() {
       <DragOverlay>
         {activeId && (
           <div style={{
-            width: '100px',  // Tamaño más pequeño para facilitar el manejo
-            height: '100px', // Tamaño más pequeño para facilitar el manejo
+            width: '100px',
+            height: '100px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             background: 'white',
             borderRadius: '4px',
             boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            fontSize: '0.75rem' // Tamaño de fuente reducido
+            fontSize: '0.75rem'
           }}>
-            {blocks.find(b => b.id === activeId) ? blocks.find(b => b.id === activeId).content : "Cargando..."}
+            {blocks.find(b => b.id === activeId)?.content || "Cargando..."}
           </div>
         )}
       </DragOverlay>
-
     </DndContext>
   );
 }
